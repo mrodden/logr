@@ -1,5 +1,7 @@
 # logr
 
+[![Godoc Reference](https://pkg.go.dev/github.com/mrodden/logr?status.svg)](https://pkg.go.dev/github.com/mrodden/logr)
+
 Reasonable logging facilities for Go
 
 Simple interface with Time-Thread-Condition-Component based output, with automatic colored output if supported.
