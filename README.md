@@ -1,6 +1,6 @@
 # logr
 
-[![Godoc Reference](https://pkg.go.dev/github.com/mrodden/logr?status.svg)](https://pkg.go.dev/github.com/mrodden/logr)
+[![Godoc Reference](https://godoc.org/github.com/mrodden/logr?status.svg)](https://godoc.org/github.com/mrodden/logr)
 
 Reasonable logging facilities for Go
 
