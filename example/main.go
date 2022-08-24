@@ -1,4 +1,4 @@
-package logr_test
+package main
 
 import (
 	"sync"
@@ -7,7 +7,7 @@ import (
 	"github.com/mrodden/logr/env_logger"
 )
 
-func Example() {
+func main() {
 	env_logger.TryInit()
 
 	log.Info("Hello Logging")
@@ -24,5 +24,4 @@ func Example() {
 	log.Infof("Info format: %#v", wg)
 
 	wg.Wait()
-	// Output:
 }

@@ -13,6 +13,7 @@ Simple interface with Time-Thread-Condition-Component based output, with automat
  - Condition: Log level based logging [DEBUG, INFO, WARN, ERROR, CRITICAL]
  - Component: Filename and line number
  - Colors: Automatically detects support for ANSI terminal colorization
+ - Level Filtering: set a global level and/or per module levels
 
 
 ## Example
@@ -22,9 +23,11 @@ import (
 	"sync"
 
 	log "github.com/mrodden/logr"
+	"github.com/mrodden/logr/env_logger"
 )
 
 func main() {
+	env_logger.TryInit()
 
 	log.Info("Hello Logging")
 
@@ -44,3 +47,16 @@ func main() {
 ```
 
 ![Colored output](logr.png)
+
+
+## Configuration
+
+The default logging implementation is `env_logger` which can be configured with the `GO_LANG` environment variable.
+
+Both the global logging level filter and per module declarations can be declared. The format is similar to the Rust `env_logger` crate.
+
+Some examples:
+
+  - `GO_LOG=warn` - Sets the global filter level to WARN, causing any logs of WARN, ERROR, or lower to be emitted from all modules.
+  - `GO_LOG=warn,github.com/mymodule/myapp=trace` - Sets the global level to WARN, and the filter for the `github.com/mymodule/myapp` to TRACE level
+  - `GO_LOG=warn,main` - Sets the global level to WARN, and enables all logging for the `main` module.
