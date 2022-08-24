@@ -51,7 +51,7 @@ func main() {
 
 ## Configuration
 
-The default logging implementation is `env_logger` which can be configured with the `GO_LANG` environment variable.
+The default logging implementation is `env_logger` which can be configured with the `GO_LOG` environment variable.
 
 Both the global logging level filter and per module declarations can be declared. The format is similar to the Rust `env_logger` crate.
 
