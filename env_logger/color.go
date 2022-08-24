@@ -1,4 +1,4 @@
-package logr
+package env_logger
 
 import (
 	"strconv"
@@ -9,6 +9,7 @@ var (
 	Green  = Style{fg: 32, bg: 42}
 	Yellow = Style{fg: 33, bg: 43}
 	Blue   = Style{fg: 34, bg: 44}
+	Purple = Style{fg: 35, bg: 45}
 )
 
 const RESET = "\x1B[0m"

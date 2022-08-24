@@ -1,26 +1,18 @@
 package logr
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNoColor(t *testing.T) {
-	buf := new(bytes.Buffer)
-	log := New(buf)
-	log.Info("Stuff")
-
-	assert.NotContains(t, buf.String(), "\x1B[")
-}
-
 func TestCallerPackageName(t *testing.T) {
-	assert.Equal(t, CallerPackageName(1), "logr")
-	assert.Equal(t, CallerPackageName(2), "testing")
+	assert.Equal(t, "github.com/mrodden/logr", CallerPackageName(1))
+	assert.Equal(t, "testing", CallerPackageName(2))
 }
 
-func TestColorPaint(t *testing.T) {
-	assert.Equal(t, Green.Paint("blah"), "\x1B[32mblah\x1B[0m")
-	assert.Equal(t, Green.Dimmed().Paint("blah"), "\x1B[2;32mblah\x1B[0m")
+func TestCleanupPackageName(t *testing.T) {
+	assert.Equal(t, "github.com/mrodden/logr/logger", cleanupPackageName("github.com/mrodden/logr/logger.(*Logger).Log"))
+	assert.Equal(t, "github.com/stretchr/testify/assert", cleanupPackageName("github.com/stretchr/testify/assert.Equal"))
+	assert.Equal(t, "main", cleanupPackageName("main.main"))
 }
