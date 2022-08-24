@@ -10,7 +10,7 @@ Simple interface with Time-Thread-Condition-Component based output, with automat
 
  - Time: ISO 8901 format timestamps in UTC
  - Thread: Log source Goroutine identifiers
- - Condition: Log level based logging [DEBUG, INFO, WARN, ERROR, CRITICAL]
+ - Condition: Log level based logging [TRACE, DEBUG, INFO, WARN, ERROR]
  - Component: Filename and line number
  - Colors: Automatically detects support for ANSI terminal colorization
  - Level Filtering: set a global level and/or per module levels
