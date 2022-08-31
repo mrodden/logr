@@ -1,73 +1,109 @@
 package env_logger
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
-	"runtime"
-	"runtime/debug"
 	"sort"
 	"strings"
-	"sync"
-	"time"
 
-	"github.com/mattn/go-isatty"
-
+	format "github.com/mrodden/logr/env_logger/fmt"
 	"github.com/mrodden/logr/logger"
 )
 
-const (
-	ISO = "2006-01-02T15:04:05.999Z"
-)
+type builder struct {
+	logger envLogger
+}
 
-func TryInit() error {
-	l := FromDefaultEnv()
+// Builder creates a new builder for configuring a logger.
+func Builder() builder {
+	return builder{
+		logger: envLogger{
+			directives: DefaultEnvFilter(),
+			format:     DefaultFormat(),
+			writer:     format.NewSyncWriter(os.Stderr),
+		},
+	}
+}
+
+// JSON sets the formatting of the logger to JSON output.
+func (b builder) JSON() builder {
+	b.logger.format.Format = format.JSON
+	b.logger.format.DisplayGoroutineId = false
+	return b
+}
+
+// WithGoroutineID sets the logging format to include the goroutine ID of the caller
+func (b builder) WithGoroutineId() builder {
+	b.logger.format.DisplayGoroutineId = true
+	return b
+}
+
+// WithEnvFilter can be used to set a custom set of filter Directives
+// for the logger created by the builder.
+// See EnvFilter and DefaultEnvFilter for building Directives.
+func (b builder) WithEnvFilter(d []Directive) builder {
+	b.logger.directives = d
+	return b
+}
+
+// Build finalizes the logger and returns it.
+func (b builder) Build() *envLogger {
+	return &b.logger
+}
+
+// TryInit finalizes the logger and sets it as the default logger.
+// This function will return an error if setting the default logger fails.
+func (b builder) TryInit() error {
+	l := b.Build()
 
 	// set global logr Logger
-	logger.SetDefaultLogger(l)
-
-	return nil
+	return logger.SetDefaultLogger(l)
 }
 
-type envLogger struct {
-	directives []Directive
-
-	mu         sync.Mutex
-	out        io.Writer
-	forceColor bool
+// Init finalizes the logger and sets it as the default logger.
+// This function will panic if setting the default logger fails.
+func (b builder) Init() {
+	err := b.TryInit()
+	if err != nil {
+		panic(fmt.Sprintf("error during logger init: %v", err))
+	}
 }
 
-func FromDefaultEnv() *envLogger {
-	return FromEnv(os.Getenv("GO_LOG"))
+func TryInit() error {
+	return Builder().TryInit()
 }
 
-func FromEnv(env string) *envLogger {
+func Init() {
+	Builder().Init()
+}
+
+func DefaultFormat() format.Format {
+	fs := strings.ToLower(os.Getenv("GO_LOG_FMT"))
+	switch fs {
+	case "json":
+		return format.Format{Format: format.JSON, DisplayGoroutineId: false}
+	default:
+		return format.Format{Format: format.Full, DisplayGoroutineId: true}
+	}
+}
+
+func DefaultEnvFilter() []Directive {
+	return EnvFilter(os.Getenv("GO_LOG"))
+}
+
+func EnvFilter(env string) []Directive {
 	directives := parse(env)
 
 	if len(directives) == 0 {
 		directives = append(directives, Directive{Name: "", Level: logger.ERROR})
 	}
-
-	return &envLogger{directives: directives, out: os.Stderr}
+	return directives
 }
 
-func (l *envLogger) ForceColor(force bool) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.forceColor = force
-}
-
-func shouldColorize(out io.Writer) bool {
-	f, ok := out.(*os.File)
-	if runtime.GOOS == "windows" {
-		ok = false
-	}
-	return ok && isatty.IsTerminal(f.Fd())
-}
-
-func GoRoutineID() string {
-	return string(bytes.Fields(debug.Stack())[1])
+type envLogger struct {
+	directives []Directive
+	format     format.Format
+	writer     *format.SyncWriter
 }
 
 func (l *envLogger) Enabled(metadata logger.Metadata) bool {
@@ -84,48 +120,7 @@ func (l *envLogger) Enabled(metadata logger.Metadata) bool {
 
 func (l *envLogger) Log(record logger.Record) {
 	if l.Enabled(*record.Metadata()) {
-
-		// time thread condition component
-		//lf := "%-24s %02v %5s %s: %s\n"
-
-		level := record.Metadata().Level()
-		comp := record.Metadata().Target()
-
-		dimmed := Style{}
-		if shouldColorize(l.out) || l.forceColor {
-			dimmed = Style{}.Dimmed()
-		}
-
-		ts := dimmed.Paint(fmt.Sprintf("%-24s ", time.Now().UTC().Format(ISO)))
-
-		thr := dimmed.Paint(fmt.Sprintf("%02v ", GoRoutineID()))
-
-		cond := fmt.Sprintf("%5s ", logger.Ltoa(level))
-		if shouldColorize(l.out) || l.forceColor {
-			cond = colorize(level, cond)
-		}
-
-		s := fmt.Sprint(record.Args()...)
-
-		comp = dimmed.Paint(comp)
-
-		buf := make([]byte, 0)
-		buf = append(buf, ts...)
-		buf = append(buf, thr...)
-		buf = append(buf, cond...)
-		buf = append(buf, comp...)
-		buf = append(buf, dimmed.Paint(":")...)
-		buf = append(buf, ' ')
-		buf = append(buf, s...)
-
-		if len(s) == 0 || s[len(s)-1] != '\n' {
-			buf = append(buf, '\n')
-		}
-
-		l.mu.Lock()
-		defer l.mu.Unlock()
-
-		_, _ = l.out.Write(buf)
+		_ = l.format.FormatEvent(l.writer, record)
 	}
 }
 
@@ -205,21 +200,4 @@ func parse(ds string) []Directive {
 
 	sort.Sort(sort.Reverse(ByName(directives)))
 	return directives
-}
-
-func colorize(level logger.Level, s string) string {
-	switch level {
-	case logger.TRACE:
-		return Purple.Paint(s)
-	case logger.DEBUG:
-		return Blue.Paint(s)
-	case logger.INFO:
-		return Green.Paint(s)
-	case logger.WARN:
-		return Yellow.Paint(s)
-	case logger.ERROR:
-		return Red.Paint(s)
-	default:
-		return Green.Paint(s)
-	}
 }

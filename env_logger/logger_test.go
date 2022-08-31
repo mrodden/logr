@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/mrodden/logr/env_logger/fmt"
 	"github.com/mrodden/logr/logger"
 )
 
@@ -36,7 +37,8 @@ func TestNoColor(t *testing.T) {
 		directives: []Directive{
 			Directive{"", logger.TRACE},
 		},
-		out: buf,
+		format: fmt.Format{Format: fmt.Full},
+		writer: fmt.NewSyncWriter(buf),
 	}
 
 	r := logger.NewRecordBuilder().
@@ -48,9 +50,4 @@ func TestNoColor(t *testing.T) {
 
 	assert.Contains(t, buf.String(), "Stuff")
 	assert.NotContains(t, buf.String(), "\x1B[")
-}
-
-func TestColorPaint(t *testing.T) {
-	assert.Equal(t, Green.Paint("blah"), "\x1B[32mblah\x1B[0m")
-	assert.Equal(t, Green.Dimmed().Paint("blah"), "\x1B[2;32mblah\x1B[0m")
 }

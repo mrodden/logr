@@ -1,5 +1,10 @@
 package logger
 
+import (
+	"errors"
+	"sync"
+)
+
 type Level int
 
 const (
@@ -9,6 +14,10 @@ const (
 	DEBUG
 	TRACE
 )
+
+func (l Level) String() string {
+	return Ltoa(l)
+}
 
 func Ltoa(level Level) string {
 	switch level {
@@ -43,6 +52,8 @@ type Record struct {
 
 func (r *Record) Metadata() *Metadata { return &r.metadata }
 func (r *Record) Args() []any         { return r.args }
+func (r *Record) Filename() string    { return r.file }
+func (r *Record) LineNumber() uint32  { return r.line }
 
 // RecordBuilder implements the builder pattern for Record objects
 // For example:
@@ -106,10 +117,21 @@ type Metadata struct {
 func (m *Metadata) Level() Level   { return m.level }
 func (m *Metadata) Target() string { return m.target }
 
-var Global Logger = nil
+var mu = sync.Mutex{}
+var global Logger = nil
 
-func SetDefaultLogger(l Logger) {
-	if Global == nil {
-		Global = l
+func Global() Logger {
+	return global
+}
+
+func SetDefaultLogger(l Logger) error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if global == nil {
+		global = l
+		return nil
+	} else {
+		return errors.New("global logger already set")
 	}
 }

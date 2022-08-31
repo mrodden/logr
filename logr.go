@@ -87,7 +87,7 @@ func logf(level logger.Level, format string, v ...any) {
 }
 
 func output(depth int, level logger.Level, s string) error {
-	if logger.Global == nil {
+	if logger.Global() == nil {
 		return nil
 	}
 
@@ -103,6 +103,6 @@ func output(depth int, level logger.Level, s string) error {
 		Line(line).
 		Build()
 
-	logger.Global.Log(rec)
+	logger.Global().Log(rec)
 	return nil
 }
