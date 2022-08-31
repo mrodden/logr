@@ -14,6 +14,7 @@ Simple interface with Time-Thread-Condition-Component based output, with automat
  - Component: Go module/package name
  - Colors: Automatically detects support for ANSI terminal colorization
  - Level Filtering: set a global level and/or per module levels
+ - Configurable Ouput: use the built in JSON output, or make your own
 
 
 ## Example
@@ -27,7 +28,7 @@ import (
 )
 
 func main() {
-	env_logger.TryInit()
+	env_logger.Init()
 
 	log.Info("Hello Logging")
 

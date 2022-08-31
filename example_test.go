@@ -8,7 +8,7 @@ import (
 )
 
 func Example() {
-	env_logger.TryInit()
+	env_logger.Init()
 
 	log.Info("Hello Logging")
 
